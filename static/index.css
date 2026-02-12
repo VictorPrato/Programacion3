@@ -1,7 +1,10 @@
 
 body {
     font-family: 'Arial', sans-serif;
-    background-color: #b99393;
+    background-image: url("../static/fondos/index.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
     color: #050505; 
     margin: 0;
     padding: 0;
@@ -12,7 +15,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: #8b4949; /* Fondo negro */
+    background-color: #8b4949; 
     padding: 8px 80px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     position: sticky;

@@ -1,6 +1,6 @@
 body {
     font-family: 'Arial', sans-serif;
-   background-image: url("../fondos/perfil.jpg");
+   background-image: url("../static/fondos/perfil.jpg");
     background-size: cover;
     
     color: #333333;

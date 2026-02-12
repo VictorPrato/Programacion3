@@ -1,7 +1,7 @@
 /* Estilos específicos para restablecer_contrasena.html */
 body {
     font-family: Arial, sans-serif;
-    background-image: url("../fondos/restablecer.jpg");
+    background-image: url("../static/fondos/restablecer.jpg");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;

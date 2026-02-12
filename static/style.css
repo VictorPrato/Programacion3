@@ -1,6 +1,6 @@
 /* Global Styles */
 body {
-   background-image: url("../fondos/registrer.jpg");
+   background-image: url("../static/fondos/login.jpg");
    background-repeat: no-repeat;
    background-size: cover;
     color: #000; 
