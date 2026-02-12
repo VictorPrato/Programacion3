@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administrador</title>
+    <link rel="stylesheet" href="carpeta/paneladmin.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+   
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="navbar-brand">
+                <h1>Panel de Administrador</h1>
+            </div>
+            <ul class="navbar-menu">
+                <li><a href="{{ url_for('admin_dashboard') }}">PANEL ADMIN</a></li>
+                <li class="dropdown">
+                    <a href="javascript:void(0)" class="dropbtn">{{ usuario[0].upper() }}</a>
+                    <div class="dropdown-content">
+                        <a href="{{ url_for('mi_perfil') }}">
+                            <i class="fas fa-user"></i> Mi Perfil
+                        </a>
+                        <a href="{{ url_for('logout') }}">
+                            <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+                        </a>
+                    </div>
+                </li>
+            </ul>
+            <button class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </nav>
+        <div class="mobile-menu hidden">
+            <a href="{{ url_for('mi_perfil') }}">
+                <i class="fas fa-user"></i> Mi Perfil
+            </a>
+            <a href="{{ url_for('logout') }}">
+                <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+            </a>
+        </div>
+    </header>
+
+    <main class="admin-container">
+        <div class="admin-header">
+            <h2>👨‍💼 Gestión de Productos</h2>
+            <p>Administra el inventario de tu tienda</p>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="icon">📦</div>
+                <div class="number" id="total-productos">0</div>
+                <div class="label">Total Productos</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">✅</div>
+                <div class="number" id="productos-disponibles">0</div>
+                <div class="label">Disponibles</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">📊</div>
+                <div class="number" id="stock-total">0</div>
+                <div class="label">Stock Total</div>
+            </div>
+        </div>
+
+        <div class="admin-grid">
+            <!-- Formulario para agregar productos -->
+            <div class="admin-card">
+                <h3><i class="fas fa-plus-circle"></i> Agregar Nuevo Producto</h3>
+                
+                <form id="form-producto">
+                    <div class="form-group">
+                        <label for="nombre-producto">
+                            <i class="fas fa-tag"></i> Nombre del Producto
+                        </label>
+                        <input 
+                            type="text" 
+                            id="nombre-producto" 
+                            placeholder="Ej: Laptop Dell Inspiron"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cantidad-producto">
+                            <i class="fas fa-boxes"></i> Cantidad / Stock
+                        </label>
+                        <input 
+                            type="number" 
+                            id="cantidad-producto" 
+                            min="0" 
+                            placeholder="Ej: 10"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="imagen-producto">
+                            <i class="fas fa-image"></i> URL de la Imagen
+                        </label>
+                        <input 
+                            type="url" 
+                            id="imagen-producto" 
+                            placeholder="https://ejemplo.com/imagen.jpg"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group" id="preview-container" style="display: none;">
+                        <label>Vista Previa:</label>
+                        <img id="preview-img" class="preview-image" alt="Preview">
+                    </div>
+
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-plus"></i> Agregar Producto
+                    </button>
+                </form>
+            </div>
+
+            <!-- Lista de productos -->
+            <div class="admin-card">
+                <h3><i class="fas fa-warehouse"></i> Inventario Actual</h3>
+                
+                <div class="producto-lista" id="lista-productos">
+                    <!-- Los productos se cargarán aquí -->
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer>
+        <p>&copy; 2025 TuPáginaWeb. Todos los derechos reservados.</p>
+    </footer>
+
+    <script>
+        // Toggle mobile menu
+        const hamburger = document.querySelector('.hamburger');
+        const mobileMenu = document.querySelector('.mobile-menu');
+
+        hamburger.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+       
+        const imagenInput = document.getElementById('imagen-producto');
+        const previewContainer = document.getElementById('preview-container');
+        const previewImg = document.getElementById('preview-img');
+
+        imagenInput.addEventListener('input', (e) => {
+            const url = e.target.value;
+            if (url) {
+                previewImg.src = url;
+                previewContainer.style.display = 'block';
+                
+                previewImg.onerror = () => {
+                    previewImg.src = 'https://via.placeholder.com/400x200?text=URL+no+válida';
+                };
+            } else {
+                previewContainer.style.display = 'none';
+            }
+        });
+
+        // Agregar producto
+        document.getElementById('form-producto').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const nombre = document.getElementById('nombre-producto').value.trim();
+            const cantidad = parseInt(document.getElementById('cantidad-producto').value);
+            const imagen = document.getElementById('imagen-producto').value.trim();
+
+            if (!nombre || cantidad < 0 || !imagen) {
+                alert('Por favor completa todos los campos correctamente');
+                return;
+            }
+
+            const nuevoProducto = {
+                id: Date.now(),
+                name: nombre,
+                quantity: cantidad,
+                imageUrl: imagen
+            };
+
+            // Obtener productos existentes
+            const productosGuardados = localStorage.getItem('productos');
+            const productos = productosGuardados ? JSON.parse(productosGuardados) : [];
+
+            // Agregar nuevo producto
+            productos.push(nuevoProducto);
+
+            // Guardar en localStorage
+            localStorage.setItem('productos', JSON.stringify(productos));
+
+            // Limpiar formulario
+            document.getElementById('form-producto').reset();
+            previewContainer.style.display = 'none';
+
+            // Recargar lista
+            cargarProductos();
+
+            alert('✅ Producto agregado exitosamente');
+        });
+
+        // Cargar productos
+        function cargarProductos() {
+            const productosGuardados = localStorage.getItem('productos');
+            const productos = productosGuardados ? JSON.parse(productosGuardados) : [];
+            
+            const lista = document.getElementById('lista-productos');
+
+            // Actualizar estadísticas
+            document.getElementById('total-productos').textContent = productos.length;
+            document.getElementById('productos-disponibles').textContent = 
+                productos.filter(p => p.quantity > 0).length;
+            document.getElementById('stock-total').textContent = 
+                productos.reduce((sum, p) => sum + p.quantity, 0);
+
+            if (productos.length === 0) {
+                lista.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <h4>No hay productos</h4>
+                        <p>Agrega tu primer producto usando el formulario</p>
+                    </div>
+                `;
+                return;
+            }
+
+            lista.innerHTML = productos.map(producto => {
+                let stockClass = 'disponible';
+                let stockText = 'Disponible';
+                
+                if (producto.quantity === 0) {
+                    stockClass = 'agotado';
+                    stockText = 'Agotado';
+                } else if (producto.quantity < 5) {
+                    stockClass = 'bajo';
+                    stockText = 'Stock Bajo';
+                }
+
+                return `
+                    <div class="producto-item">
+                        <img src="${producto.imageUrl}" 
+                             alt="${producto.name}"
+                             onerror="this.src='https://via.placeholder.com/80?text=Sin+Imagen'">
+                        <div class="producto-item-info">
+                            <h4>${producto.name}</h4>
+                            <p>
+                                <span class="stock-badge ${stockClass}">
+                                    ${stockText}: ${producto.quantity} unidades
+                                </span>
+                            </p>
+                        </div>
+                        <button class="btn-delete" onclick="eliminarProducto(${producto.id})">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Eliminar producto
+        function eliminarProducto(id) {
+            if (!confirm('¿Estás seguro de eliminar este producto?')) {
+                return;
+            }
+
+            const productosGuardados = localStorage.getItem('productos');
+            let productos = productosGuardados ? JSON.parse(productosGuardados) : [];
+
+            productos = productos.filter(p => p.id !== id);
+
+            localStorage.setItem('productos', JSON.stringify(productos));
+
+            cargarProductos();
+
+            alert('🗑️ Producto eliminado');
+        }
+
+        // Cargar productos al inicio
+        window.addEventListener('load', () => {
+            cargarProductos();
+        });
+    </script>
+</body>
+</html>

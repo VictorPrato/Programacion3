@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tienda - Página Principal</title>
+    <link rel="stylesheet" href="carpeta/index.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+   
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="navbar-brand">
+                <h1>Bienvenido, {{ usuario }}!</h1>
+            </div>
+            <ul class="navbar-menu">
+                <li><a href="{{ url_for('pagina_principal') }}">INICIO</a></li>
+                <li class="dropdown">
+                    <a href="javascript:void(0)" class="dropbtn">{{ usuario[0].upper() }}</a>
+                    <div class="dropdown-content">
+                        <a href="{{ url_for('mi_perfil') }}">
+                            <i class="fas fa-user"></i> Mi Perfil
+                        </a>
+                        <a href="{{ url_for('logout') }}">
+                            <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+                        </a>
+                    </div>
+                </li>
+            </ul>
+            <button class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </nav>
+        <div class="mobile-menu hidden">
+            <a href="{{ url_for('mi_perfil') }}">
+                <i class="fas fa-user"></i> Mi Perfil
+            </a>
+            <a href="{{ url_for('logout') }}">
+                <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+            </a>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <div class="welcome-text">
+            <h2>🛍️ ¡Bienvenido a nuestra tienda!</h2>
+            <p>Explora nuestros productos disponibles y realiza tu compra.</p>
+        </div>
+
+        <section class="tienda-container">
+            <!-- Grid de Productos -->
+            <div class="productos-grid" id="productos-grid">
+                <!-- Los productos se cargarán aquí dinámicamente -->
+            </div>
+
+            <!-- Carrito Lateral -->
+            <div class="carrito-sidebar">
+                <h3>🛒 Mi Carrito</h3>
+                <div id="carrito-items">
+                    <div class="carrito-vacio">
+                        <i class="fas fa-shopping-cart"></i>
+                        <p>Tu carrito está vacío</p>
+                    </div>
+                </div>
+                <div id="carrito-total" class="carrito-total" style="display: none;">
+                    <strong>Total: <span id="total-items">0</span> productos</strong>
+                </div>
+                <button class="btn-comprar" id="btn-comprar" onclick="completarCompra()" disabled>
+                    Completar Compra
+                </button>
+            </div>
+        </section>
+    </main>
+    
+    <footer>
+        <p>&copy; 2025 TuPáginaWeb. Todos los derechos reservados.</p>
+    </footer>
+
+    <script>
+     
+        const hamburger = document.querySelector('.hamburger');
+        const mobileMenu = document.querySelector('.mobile-menu');
+
+        hamburger.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        
+        let carrito = [];
+
+        
+        function cargarProductos() {
+            const productosGuardados = localStorage.getItem('productos');
+            const productos = productosGuardados ? JSON.parse(productosGuardados) : [];
+            
+            const grid = document.getElementById('productos-grid');
+            
+            if (productos.length === 0) {
+                grid.innerHTML = `
+                    <div class="productos-vacio">
+                        <i class="fas fa-box-open"></i>
+                        <h3>No hay productos disponibles</h3>
+                        <p>El administrador aún no ha agregado productos a la tienda.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = productos.map(producto => `
+                <div class="producto-card">
+                    <img src="${producto.imageUrl}" 
+                         alt="${producto.name}"
+                         onerror="this.src='https://via.placeholder.com/280x200?text=Sin+Imagen'">
+                    <div class="producto-info">
+                        <h4>${producto.name}</h4>
+                        <p class="stock ${producto.quantity <= 0 ? 'agotado' : ''}">
+                            ${producto.quantity > 0 
+                                ? `Stock disponible: ${producto.quantity}` 
+                                : 'Agotado'}
+                        </p>
+                        ${producto.quantity > 0 ? `
+                            <div class="compra-section">
+                                <input type="number" 
+                                       min="1" 
+                                       max="${producto.quantity}" 
+                                       value="1" 
+                                       id="cant-${producto.id}">
+                                <button onclick="agregarCarrito(${producto.id}, '${producto.name}', ${producto.quantity})">
+                                    <i class="fas fa-cart-plus"></i> Agregar
+                                </button>
+                            </div>
+                        ` : `
+                            <div class="compra-section">
+                                <button disabled>No disponible</button>
+                            </div>
+                        `}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Agregar producto al carrito
+        function agregarCarrito(id, nombre, stockDisponible) {
+            const inputCantidad = document.getElementById(`cant-${id}`);
+            const cantidad = parseInt(inputCantidad.value);
+
+            if (cantidad > stockDisponible) {
+                alert('No hay suficiente stock disponible');
+                return;
+            }
+
+            const itemExistente = carrito.find(item => item.id === id);
+
+            if (itemExistente) {
+                if (itemExistente.cantidad + cantidad > stockDisponible) {
+                    alert('No puedes agregar más de lo disponible en stock');
+                    return;
+                }
+                itemExistente.cantidad += cantidad;
+            } else {
+                carrito.push({
+                    id: id,
+                    nombre: nombre,
+                    cantidad: cantidad
+                });
+            }
+
+            inputCantidad.value = 1;
+            actualizarCarrito();
+            
+            // Animación de confirmación
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check"></i> Agregado';
+            button.style.background = '#28a745';
+            
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.style.background = '';
+            }, 1000);
+        }
+
+        // Actualizar vista del carrito
+        function actualizarCarrito() {
+            const carritoItems = document.getElementById('carrito-items');
+            const carritoTotal = document.getElementById('carrito-total');
+            const totalItems = document.getElementById('total-items');
+            const btnComprar = document.getElementById('btn-comprar');
+
+            if (carrito.length === 0) {
+                carritoItems.innerHTML = `
+                    <div class="carrito-vacio">
+                        <i class="fas fa-shopping-cart"></i>
+                        <p>Tu carrito está vacío</p>
+                    </div>
+                `;
+                carritoTotal.style.display = 'none';
+                btnComprar.disabled = true;
+                return;
+            }
+
+            carritoItems.innerHTML = carrito.map(item => `
+                <div class="carrito-item">
+                    <div class="carrito-item-header">
+                        <h5>${item.nombre}</h5>
+                        <button onclick="eliminarDelCarrito(${item.id})" title="Eliminar">
+                            ✕
+                        </button>
+                    </div>
+                    <p class="carrito-item-cantidad">Cantidad: ${item.cantidad}</p>
+                </div>
+            `).join('');
+
+            const total = carrito.reduce((sum, item) => sum + item.cantidad, 0);
+            totalItems.textContent = total;
+            carritoTotal.style.display = 'block';
+            btnComprar.disabled = false;
+        }
+
+        // Eliminar producto del carrito
+        function eliminarDelCarrito(id) {
+            carrito = carrito.filter(item => item.id !== id);
+            actualizarCarrito();
+        }
+
+        // Completar compra
+        function completarCompra() {
+            if (carrito.length === 0) {
+                alert('El carrito está vacío');
+                return;
+            }
+
+            if (!confirm('¿Confirmar la compra de ' + carrito.reduce((sum, item) => sum + item.cantidad, 0) + ' productos?')) {
+                return;
+            }
+
+            // Obtener productos actuales
+            const productosGuardados = localStorage.getItem('productos');
+            let productos = productosGuardados ? JSON.parse(productosGuardados) : [];
+
+            // Actualizar stock
+            carrito.forEach(itemCarrito => {
+                const producto = productos.find(p => p.id === itemCarrito.id);
+                if (producto) {
+                    producto.quantity -= itemCarrito.cantidad;
+                }
+            });
+
+            // Guardar productos actualizados
+            localStorage.setItem('productos', JSON.stringify(productos));
+
+            // Limpiar carrito
+            carrito = [];
+            actualizarCarrito();
+
+            // Recargar productos
+            cargarProductos();
+
+            //  confirmación
+            alert('¡Compra realizada exitosamente! 🎉\n\nGracias por tu compra.');
+        }
+
+        // Cargar productos al inicio
+        window.addEventListener('load', () => {
+            cargarProductos();
+            
+            //carga de la seccion de la tienda en automatico cuando suba algo
+            setInterval(cargarProductos, 5000);
+        });
+    </script>
+</body>
+</html>
