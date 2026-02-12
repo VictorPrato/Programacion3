@@ -9,7 +9,7 @@ import os
 
 app = Flask(__name__)
 bcrypt = Bcrypt(app)
-app.secret_key = os.getenv('secret_key')
+app.secret_key = os.getenv('secret_key','supersecretkey')
 client = MongoClient(os.getenv('MONGO_URI'))
 db = client['bdproyecto'] 
 collection = db['usuarios'] 
