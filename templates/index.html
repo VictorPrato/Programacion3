@@ -117,6 +117,10 @@
                          onerror="this.src='https://via.placeholder.com/280x200?text=Sin+Imagen'">
                     <div class="producto-info">
                         <h4>${producto.name}</h4>
+                        <p class="precio">
+                            <i class="fas fa-dollar-sign"></i> 
+                            $${producto.price.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </p>
                         <p class="stock ${producto.quantity <= 0 ? 'agotado' : ''}">
                             ${producto.quantity > 0 
                                 ? `Stock disponible: ${producto.quantity}` 
@@ -165,6 +169,7 @@
                 carrito.push({
                     id: id,
                     nombre: nombre,
+                    precio: precio,
                     cantidad: cantidad
                 });
             }
