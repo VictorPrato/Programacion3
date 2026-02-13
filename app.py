@@ -186,3 +186,4 @@ if __name__ == '__main__':
     # Esto permite que Render asigne el puerto y que la app sea visible (0.0.0.0)
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
+#se cambio la direccion de los puertos para evitar errores en render 
