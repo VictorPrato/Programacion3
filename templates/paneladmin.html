@@ -101,11 +101,12 @@
                             <input 
                                 type="number" 
                                 id="precio-producto" 
-                                min="0" 
+                                min="0.01" 
                                 step="0.01"
                                 placeholder="Ej: 499.99"
                                 required
                             >
+                            <small class="form-help">El precio debe ser mayor a $0.00</small>
                         </div>
 
                         <div class="form-group">
@@ -197,8 +198,21 @@
             const cantidad = parseInt(document.getElementById('cantidad-producto').value);
             const imagen = document.getElementById('imagen-producto').value.trim();
 
-            if (!nombre || precio < 0 || cantidad < 0 || !imagen) {
+            // Validación de campos vacíos
+            if (!nombre || !imagen) {
                 alert('Por favor completa todos los campos correctamente');
+                return;
+            }
+
+            // Validación de precio
+            if (precio <= 0 || isNaN(precio)) {
+                alert('❌ El precio debe ser mayor a 0');
+                return;
+            }
+
+            // Validación de cantidad
+            if (cantidad < 0 || isNaN(cantidad)) {
+                alert('❌ La cantidad no puede ser negativa');
                 return;
             }
 
