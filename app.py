@@ -66,6 +66,25 @@ def home():
     else:
         return redirect(url_for('index'))
 
+@app.route('/pagina_principal')
+def pagina_principal():
+    """Ruta que redirige a la página principal según el rol del usuario"""
+    if 'usuario' not in session:
+        return redirect(url_for('login'))
+    
+    # Obtener el usuario de la base de datos
+    user = collection.find_one({'usuario': session['usuario']})
+    
+    if not user:
+        session.pop('usuario', None)
+        return redirect(url_for('login'))
+    
+    # Redirigir según el rol
+    if user.get('rol') == 'admin':
+        return redirect(url_for('admin_dashboard'))  # Admin va al panel de administración
+    else:
+        return redirect(url_for('index'))  # Usuario regular va a la tienda
+
 @app.route('/registro', methods=['GET', 'POST'])
 def registro():
     if request.method == 'POST':
@@ -186,4 +205,4 @@ if __name__ == '__main__':
     # Esto permite que Render asigne el puerto y que la app sea visible (0.0.0.0)
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
-#se cambio la direccion de los puertos para evitar errores en render 
+#se cambio la direccion de los puertos para evitar errores en render
