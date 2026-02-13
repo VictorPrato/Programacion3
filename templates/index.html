@@ -66,8 +66,19 @@
                         <p>Tu carrito está vacío</p>
                     </div>
                 </div>
-                <div id="carrito-total" class="carrito-total" style="display: none;">
-                    <strong>Total: <span id="total-items">0</span> productos</strong>
+                <div id="carrito-resumen" class="carrito-resumen" style="display: none;">
+                    <div class="resumen-linea">
+                        <span>Productos:</span>
+                        <span id="total-items">0</span>
+                    </div>
+                    <div class="resumen-linea">
+                        <span>Subtotal:</span>
+                        <span id="subtotal-carrito">$0.00</span>
+                    </div>
+                    <div class="resumen-total">
+                        <strong>Total:</strong>
+                        <strong id="total-carrito">$0.00</strong>
+                    </div>
                 </div>
                 <button class="btn-comprar" id="btn-comprar" onclick="completarCompra()" disabled>
                     Completar Compra
@@ -81,7 +92,7 @@
     </footer>
 
     <script>
-     
+        // Toggle mobile menu
         const hamburger = document.querySelector('.hamburger');
         const mobileMenu = document.querySelector('.mobile-menu');
 
@@ -89,10 +100,10 @@
             mobileMenu.classList.toggle('hidden');
         });
 
-        
+        // Carrito de compras
         let carrito = [];
 
-        
+        // Cargar productos
         function cargarProductos() {
             const productosGuardados = localStorage.getItem('productos');
             const productos = productosGuardados ? JSON.parse(productosGuardados) : [];
@@ -110,7 +121,11 @@
                 return;
             }
 
-            grid.innerHTML = productos.map(producto => `
+            grid.innerHTML = productos.map(producto => {
+                // Asegurar que el producto tenga precio
+                const precio = producto.price || 0;
+                
+                return `
                 <div class="producto-card">
                     <img src="${producto.imageUrl}" 
                          alt="${producto.name}"
@@ -119,7 +134,7 @@
                         <h4>${producto.name}</h4>
                         <p class="precio">
                             <i class="fas fa-dollar-sign"></i> 
-                            $${producto.price.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            $${precio.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </p>
                         <p class="stock ${producto.quantity <= 0 ? 'agotado' : ''}">
                             ${producto.quantity > 0 
@@ -133,7 +148,7 @@
                                        max="${producto.quantity}" 
                                        value="1" 
                                        id="cant-${producto.id}">
-                                <button onclick="agregarCarrito(${producto.id}, '${producto.name}', ${producto.quantity})">
+                                <button onclick="agregarCarrito(${producto.id}, '${producto.name}', ${precio}, ${producto.quantity})">
                                     <i class="fas fa-cart-plus"></i> Agregar
                                 </button>
                             </div>
@@ -144,11 +159,12 @@
                         `}
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
 
         // Agregar producto al carrito
-        function agregarCarrito(id, nombre, stockDisponible) {
+        window.agregarCarrito = function(id, nombre, precio, stockDisponible) {
             const inputCantidad = document.getElementById(`cant-${id}`);
             const cantidad = parseInt(inputCantidad.value);
 
@@ -187,13 +203,15 @@
                 button.innerHTML = originalText;
                 button.style.background = '';
             }, 1000);
-        }
+        };
 
         // Actualizar vista del carrito
         function actualizarCarrito() {
             const carritoItems = document.getElementById('carrito-items');
-            const carritoTotal = document.getElementById('carrito-total');
+            const carritoResumen = document.getElementById('carrito-resumen');
             const totalItems = document.getElementById('total-items');
+            const subtotalCarrito = document.getElementById('subtotal-carrito');
+            const totalCarrito = document.getElementById('total-carrito');
             const btnComprar = document.getElementById('btn-comprar');
 
             if (carrito.length === 0) {
@@ -203,43 +221,67 @@
                         <p>Tu carrito está vacío</p>
                     </div>
                 `;
-                carritoTotal.style.display = 'none';
+                carritoResumen.style.display = 'none';
                 btnComprar.disabled = true;
                 return;
             }
 
-            carritoItems.innerHTML = carrito.map(item => `
-                <div class="carrito-item">
-                    <div class="carrito-item-header">
-                        <h5>${item.nombre}</h5>
-                        <button onclick="eliminarDelCarrito(${item.id})" title="Eliminar">
-                            ✕
-                        </button>
+            carritoItems.innerHTML = carrito.map(item => {
+                const subtotalItem = item.precio * item.cantidad;
+                return `
+                    <div class="carrito-item">
+                        <div class="carrito-item-header">
+                            <h5>${item.nombre}</h5>
+                            <button onclick="eliminarDelCarrito(${item.id})" title="Eliminar">
+                                ✕
+                            </button>
+                        </div>
+                        <div class="carrito-item-details">
+                            <p class="carrito-item-precio">
+                                $${item.precio.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} 
+                                × ${item.cantidad}
+                            </p>
+                            <p class="carrito-item-subtotal">
+                                <strong>$${subtotalItem.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                            </p>
+                        </div>
                     </div>
-                    <p class="carrito-item-cantidad">Cantidad: ${item.cantidad}</p>
-                </div>
-            `).join('');
+                `;
+            }).join('');
 
-            const total = carrito.reduce((sum, item) => sum + item.cantidad, 0);
-            totalItems.textContent = total;
-            carritoTotal.style.display = 'block';
+            // Calcular totales
+            const cantidadTotal = carrito.reduce((sum, item) => sum + item.cantidad, 0);
+            const montoTotal = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+
+            totalItems.textContent = cantidadTotal;
+            subtotalCarrito.textContent = '$' + montoTotal.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            totalCarrito.textContent = '$' + montoTotal.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            
+            carritoResumen.style.display = 'block';
             btnComprar.disabled = false;
         }
 
         // Eliminar producto del carrito
-        function eliminarDelCarrito(id) {
+        window.eliminarDelCarrito = function(id) {
             carrito = carrito.filter(item => item.id !== id);
             actualizarCarrito();
-        }
+        };
 
         // Completar compra
-        function completarCompra() {
+        window.completarCompra = function() {
             if (carrito.length === 0) {
                 alert('El carrito está vacío');
                 return;
             }
 
-            if (!confirm('¿Confirmar la compra de ' + carrito.reduce((sum, item) => sum + item.cantidad, 0) + ' productos?')) {
+            const totalProductos = carrito.reduce((sum, item) => sum + item.cantidad, 0);
+            const totalPagar = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+
+            const mensaje = `¿Confirmar la compra?\n\n` +
+                          `Productos: ${totalProductos}\n` +
+                          `Total a pagar: $${totalPagar.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+            if (!confirm(mensaje)) {
                 return;
             }
 
@@ -258,22 +300,24 @@
             // Guardar productos actualizados
             localStorage.setItem('productos', JSON.stringify(productos));
 
+            // Mensaje de confirmación
+            alert(`¡Compra realizada exitosamente! 🎉\n\n` +
+                  `Total pagado: $${totalPagar.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n` +
+                  `Gracias por tu compra.`);
+
             // Limpiar carrito
             carrito = [];
             actualizarCarrito();
 
             // Recargar productos
             cargarProductos();
-
-            //  confirmación
-            alert('¡Compra realizada exitosamente! 🎉\n\nGracias por tu compra.');
-        }
+        };
 
         // Cargar productos al inicio
         window.addEventListener('load', () => {
             cargarProductos();
             
-            //carga de la seccion de la tienda en automatico cuando suba algo
+            // Actualización automática cada 5 segundos
             setInterval(cargarProductos, 5000);
         });
     </script>

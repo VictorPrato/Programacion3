@@ -68,6 +68,11 @@
                 <div class="number" id="stock-total">0</div>
                 <div class="label">Stock Total</div>
             </div>
+            <div class="stat-card">
+                <div class="icon">💰</div>
+                <div class="number" id="valor-inventario">$0</div>
+                <div class="label">Valor Inventario</div>
+            </div>
         </div>
 
         <div class="admin-grid">
@@ -88,17 +93,33 @@
                         >
                     </div>
 
-                    <div class="form-group">
-                        <label for="cantidad-producto">
-                            <i class="fas fa-boxes"></i> Cantidad / Stock
-                        </label>
-                        <input 
-                            type="number" 
-                            id="cantidad-producto" 
-                            min="0" 
-                            placeholder="Ej: 10"
-                            required
-                        >
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="precio-producto">
+                                <i class="fas fa-dollar-sign"></i> Precio
+                            </label>
+                            <input 
+                                type="number" 
+                                id="precio-producto" 
+                                min="0" 
+                                step="0.01"
+                                placeholder="Ej: 499.99"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="cantidad-producto">
+                                <i class="fas fa-boxes"></i> Stock
+                            </label>
+                            <input 
+                                type="number" 
+                                id="cantidad-producto" 
+                                min="0" 
+                                placeholder="Ej: 10"
+                                required
+                            >
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -148,7 +169,7 @@
             mobileMenu.classList.toggle('hidden');
         });
 
-       
+        // Preview imagen
         const imagenInput = document.getElementById('imagen-producto');
         const previewContainer = document.getElementById('preview-container');
         const previewImg = document.getElementById('preview-img');
@@ -172,10 +193,11 @@
             e.preventDefault();
 
             const nombre = document.getElementById('nombre-producto').value.trim();
+            const precio = parseFloat(document.getElementById('precio-producto').value);
             const cantidad = parseInt(document.getElementById('cantidad-producto').value);
             const imagen = document.getElementById('imagen-producto').value.trim();
 
-            if (!nombre || cantidad < 0 || !imagen) {
+            if (!nombre || precio < 0 || cantidad < 0 || !imagen) {
                 alert('Por favor completa todos los campos correctamente');
                 return;
             }
@@ -183,6 +205,7 @@
             const nuevoProducto = {
                 id: Date.now(),
                 name: nombre,
+                price: precio,
                 quantity: cantidad,
                 imageUrl: imagen
             };
@@ -220,6 +243,14 @@
                 productos.filter(p => p.quantity > 0).length;
             document.getElementById('stock-total').textContent = 
                 productos.reduce((sum, p) => sum + p.quantity, 0);
+            
+            // Calcular valor total del inventario
+            const valorInventario = productos.reduce((sum, p) => {
+                const precio = p.price || 0;
+                return sum + (precio * p.quantity);
+            }, 0);
+            document.getElementById('valor-inventario').textContent = 
+                '$' + valorInventario.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
             if (productos.length === 0) {
                 lista.innerHTML = `
@@ -244,6 +275,9 @@
                     stockText = 'Stock Bajo';
                 }
 
+                // Asegurar que tenga precio
+                const precio = producto.price || 0;
+
                 return `
                     <div class="producto-item">
                         <img src="${producto.imageUrl}" 
@@ -251,6 +285,10 @@
                              onerror="this.src='https://via.placeholder.com/80?text=Sin+Imagen'">
                         <div class="producto-item-info">
                             <h4>${producto.name}</h4>
+                            <p class="producto-precio">
+                                <i class="fas fa-dollar-sign"></i> 
+                                $${precio.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </p>
                             <p>
                                 <span class="stock-badge ${stockClass}">
                                     ${stockText}: ${producto.quantity} unidades
@@ -266,7 +304,7 @@
         }
 
         // Eliminar producto
-        function eliminarProducto(id) {
+        window.eliminarProducto = function(id) {
             if (!confirm('¿Estás seguro de eliminar este producto?')) {
                 return;
             }
@@ -281,7 +319,7 @@
             cargarProductos();
 
             alert('🗑️ Producto eliminado');
-        }
+        };
 
         // Cargar productos al inicio
         window.addEventListener('load', () => {
